@@ -6277,3 +6277,26 @@ async def saasshorts_voices(
         ],
         "source": "defaults",
     }
+import os
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+# Path to compiled React build (frontend/dist)
+frontend_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "frontend", "dist"))
+
+# Mount compiled static assets (JS/CSS)
+if os.path.exists(frontend_dist):
+    assets_dir = os.path.join(frontend_dist, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+# Catch-all route to serve the React Single Page Application
+@app.get("/{catchall:path}")
+async def serve_spa(catchall: str):
+    file_path = os.path.join(frontend_dist, catchall)
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        return FileResponse(file_path)
+    index_path = os.path.join(frontend_dist, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"status": "Backend running. Frontend build not found."}
